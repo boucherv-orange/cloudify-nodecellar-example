@@ -7,7 +7,6 @@ description: >
 imports:
   - http://www.getcloudify.org/spec/cloudify/3.3.1/types.yaml
   - http://www.getcloudify.org/spec/diamond-plugin/1.3.1/plugin.yaml
-  - types/nodecellar.yaml
   - types/simple-types.yaml
 
 #####################################################################################
@@ -32,43 +31,19 @@ inputs:
       description: >
         Path to a private key that resided on the management machine.
         SSH-ing into agent machines will be done with this key.
+  dns_ip:
+    description: >
+        IP du DNS
 
 node_templates:
 
-  nodecellar:
-    type: nodecellar.nodes.NodecellarApplicationModule
-    relationships:
-
-      ################################
-      # Setting the mongo connection
-      ################################
-
-      - type: node_connected_to_mongo
-        target: mongod
-        target_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            postconfigure:
-              inputs:
-                mongo_ip_address: localhost
-
-      ################################
-      # Setting the nodejs connection
-      ################################
-
-      - type: node_contained_in_nodejs
-        target: nodejs
-
-  mongod:
-    type: nodecellar.nodes.MonitoredMongoDatabase
+  sprout:
+    type: cloudify.nodes.ApplicationServer
     relationships:
       - type: cloudify.relationships.contained_in
         target: host
-
-  nodejs:
-    type: nodecellar.nodes.NodeJSServer
-    relationships:
-      - type: cloudify.relationships.contained_in
-        target: host
+      - type: sprout_connected_to_bind
+        target: dns
 
   host:
     type: nodecellar.nodes.MonitoredServer
@@ -78,15 +53,27 @@ node_templates:
         user: { get_input: agent_user }
         key: { get_input: agent_private_key_path }
 
+  dns:
+    type: cloudify.nodes.Compute
+    properties:
+      ip: { get_input: dns_ip }
+      install_agent: false
+
 ###########################################################
 # This outputs section exposes the application endpoint.
 # You can access it by running:
 #   - cfy deployments -d <deployment_id> outputs
 ###########################################################
 
-outputs:
-  endpoint:
-    description: Web application endpoint
-    value:
-      ip_address: { get_property: [ host, ip ] }
-      port: { get_property: [ nodecellar, port ] }
+relationships:
+  sprout_connected_to_bind:
+    derived_from: cloudify.relationships.connected_to
+    target_interfaces:
+      cloudify.interfaces.relationship_lifecycle:
+        establish:
+          implementation: scripts/add_sprout_record.py
+          executor: central_deployment_agent
+        unlink:
+          implementation: scripts/del_sprout_record.py
+          executor: central_deployment_agent
+
