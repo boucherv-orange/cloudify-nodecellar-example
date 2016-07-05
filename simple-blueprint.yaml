@@ -43,8 +43,18 @@ node_templates:
     relationships:
       - type: cloudify.relationships.contained_in
         target: host
-      - type: sprout_connected_to_bind
+      - type: cloudify.openstack_adds.node_connected_to_DNS
         target: dns
+        source_interfaces:
+          cloudify.interfaces.relationship_lifecycle:
+            establish:
+              implementation: openstack_adds.designate_plugin.recordsets.add_node
+              executor: central_deployment_agent
+              inputs:
+                domain: clearwater.local
+                other_roles: 
+                  - icscf
+                  - scscf
 
   host:
     type: nodecellar.nodes.MonitoredServer
@@ -67,17 +77,5 @@ node_templates:
 #   - cfy deployments -d <deployment_id> outputs
 ###########################################################
 
-relationships:
-  sprout_connected_to_bind:
-    derived_from: cloudify.openstack_adds.node_connected_to_DNS
-    source_interfaces:
-      cloudify.interfaces.relationship_lifecycle:
-        establish:
-          implementation: openstack_adds.designate_plugin.recordsets.add_node
-          executor: central_deployment_agent
-          inputs:
-            domain: clearwater.local
-            other_roles: 
-              - icscf
-              - scscf
+
 
