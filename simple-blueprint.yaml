@@ -55,7 +55,7 @@ node_templates:
         key: { get_input: agent_private_key_path }
 
   dns:
-    type: cloudify.openstack_adds.nodes.DNS_client:
+    type: cloudify.openstack_adds.nodes.DNS_client
     properties:
       dns_ips:
         - { get_input: dns_ip }
