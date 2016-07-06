@@ -73,6 +73,9 @@ node_templates:
     properties:
       dns_ips:
         - { get_input: dns_ip }
+      domains:
+        - clearwater.local
+        - clearwater.pub
       install_agent: false
 
 ###########################################################
