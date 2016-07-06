@@ -48,8 +48,12 @@ node_templates:
         source_interfaces:
           cloudify.interfaces.relationship_lifecycle:
             establish:
-              implementation: openstack_adds.designate_plugin.recordsets.add_node
-              executor: central_deployment_agent
+              inputs:
+                domain: clearwater.local
+                other_roles: 
+                  - icscf
+                  - scscf
+            unlink:
               inputs:
                 domain: clearwater.local
                 other_roles: 
